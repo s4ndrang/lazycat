@@ -31,11 +31,24 @@ cat_surface = pygame.image.load('img/cat50.png')
 ground_surface = pygame.image.load('img/ground50.jpeg')
 brick_surface = pygame.image.load('img/brick50.jpeg')
 
+kittyFactor = [-1, 0, 1]
+groundFactor = [-2, -1, 0, 1, 2]
+
 def display_background(nbRangee):
     screen.blit(sky_surface, (0, 0))
     text_rect = text_surface.get_rect(center = (700, (335-(50*nbRangee + 5*nbRangee-1)/2)/2 + 10))
     # text_rect = text_surface.get_rect(center = (700, 85))
     screen.blit(text_surface, text_rect)
+
+def display_surround(multiplier, surface, minX, minY, maxX, maxY) -> list[any]:
+    array = []
+    for i in range(len(multiplier)):
+        for j in range(len(multiplier)):
+            if i == 0 or i == len(multiplier)-1 or j == 0 or j == len(multiplier)-1:
+                if (cat_rect.x + 55*multiplier[i]) >= minX and (cat_rect.x + 55*multiplier[i]) <= maxX and (cat_rect.y + 55*multiplier[j]) >= minY and (cat_rect.y + 55*multiplier[j]) <= maxY :
+                    rect = surface.get_rect(topleft = (cat_rect.x + 55*multiplier[i], cat_rect.y + 55*multiplier[j]))
+                    array.append(rect)
+    return array
 
 while True:
     
@@ -55,20 +68,25 @@ while True:
 
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
-                print(event.unicode)
                 nbRangee = event.unicode
 
         nbRangee = int(nbRangee)
 
         if nbRangee > 2 and nbRangee < 11:
+            minX = 700-(50*nbRangee + 5*nbRangee-1)/2
+            minY = 335-(50*nbRangee + 5*nbRangee-1)/2
+            maxX = 700+(50*nbRangee + 5*nbRangee-1)/2
+            maxY = 335+(50*nbRangee + 5*nbRangee-1)/2
+            brick_rect = brick_surface.get_rect(topleft = (minX, minY))
             
-            brick_rect = brick_surface.get_rect(topleft = (700-(50*nbRangee + 5*nbRangee-1)/2, 335-(50*nbRangee + 5*nbRangee-1)/2))
-        
-
-            #pour positionner chat
+            #positionn cat
             randint1 = random.randrange(0, nbRangee)
             randint2 = random.randrange(0, nbRangee)
             cat_rect = cat_surface.get_rect(topleft = (700-(50*nbRangee + 5*nbRangee-1)/2 + 55*randint1, 335-(50*nbRangee + 5*nbRangee-1)/2 + 55*randint2))
+
+            #position kittens
+            kittyArray = display_surround(kittyFactor, kitty_surface, minX, minY, maxX, maxY)
+            groundArray = display_surround(groundFactor, ground_surface, minX, minY, maxX, maxY)
 
             #put the x position of the top left corner of each brick in an array
             listofx = []
@@ -95,6 +113,10 @@ while True:
                 # text_rect = text_surface.get_rect(center = (700, (335-(50*nbRangee + 5*nbRangee-1)/2)/2 + 10))
 
                 screen.blit(cat_surface, cat_rect)
+                for i in range(len(kittyArray)):
+                    screen.blit(kitty_surface, kittyArray[i])
+                for i in range(len(groundArray)):
+                    screen.blit(ground_surface, groundArray[i])
 
                 brick_rect.x = 700-(50*nbRangee + 5*nbRangee-1)/2
                 brick_rect.y = 335-(50*nbRangee + 5*nbRangee-1)/2
