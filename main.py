@@ -17,7 +17,9 @@ clock = pygame.time.Clock()
 
 #text
 text_font = pygame.font.Font('img/GloriousChristmas-BLWWB.ttf', 40)
+sm_font = pygame.font.Font('img/GloriousChristmas-BLWWB.ttf', 20)
 score = 0
+gameHistory = []
 
 #test_surface = pygame.Surface((100, 200))
 #test_surface.fill('greenyellow')
@@ -27,6 +29,7 @@ sky_surface = pygame.image.load('img/bigsky.jpeg')
 text_surface = text_font.render('Le Chat Paresseux', False, 'Black')
 score_surface = text_font.render('Score : ', False, 'Black')
 scorenum_surface = text_font.render(str(score), False, 'Black')
+htitle_surface = sm_font.render('Game History', True, 'Black')
 chooseRows_surface = text_font.render('How many blocks per row (3-10)? ', False, 'Black')
 winthegame_surface = text_font.render('YOU WON !!! click anywhere to start a new game', False, 'Black')
 kitty_surface = pygame.image.load('img/kittenTrans50.png')
@@ -41,8 +44,10 @@ def display_background(nbRangee):
     screen.blit(sky_surface, (0, 0))
     text_rect = text_surface.get_rect(center = (700, (335-(50*nbRangee + 5*nbRangee-1)/2)/2 + 10))
     score_rect = score_surface.get_rect(topright = (width - 20, 20))
+    htitle_rect = htitle_surface.get_rect(topleft = (20, 20))
     screen.blit(text_surface, text_rect)
     screen.blit(score_surface, score_rect)
+    screen.blit(htitle_surface, htitle_rect)
 
 
 def display_surround(multiplier, surface, minX, minY, maxX, maxY) -> list[any]:
@@ -114,11 +119,7 @@ while True:
             stop = True
 
             while stop:
-                #debut position briques
                 display_background(nbRangee)
-
-                #debut position titre
-                # text_rect = text_surface.get_rect(center = (700, (335-(50*nbRangee + 5*nbRangee-1)/2)/2 + 10))
 
                 screen.blit(cat_surface, cat_rect)
                 for i in range(len(kittyArray)):
@@ -139,11 +140,19 @@ while True:
                     brick_rect.y += 55
 
                 if posx == listofx.index(cat_rect.x) and posy == listofy.index(cat_rect.y):
+                    gameHistory.append({'nbRangee' : nbRangee, 'score' : score})
                     nbRangee = 0
                     won = True
                     while won:
                         
                         screen.blit(winthegame_surface, winthegame_rect)
+                        for i, record in enumerate(gameHistory):
+                            history_text = f"Row: {record['nbRangee']}, Score: {record['score']}"
+                            history_surface = sm_font.render(history_text, False, 'Black')                            
+                            history_rect = history_surface.get_rect(topleft = (20, 40 + i*20))
+                            screen.blit(history_surface, history_rect)
+
+                        pygame.display.flip()
 
                         for event in pygame.event.get():
                             #if player clicks 'ESC', quit the game doesnt work
@@ -158,8 +167,8 @@ while True:
                                 stop = False
                                 won = False
 
-                        pygame.display.update()
-                        clock.tick(60)
+                        # pygame.display.update()
+                        # clock.tick(60)
 
             # list of events
                 for event in pygame.event.get():
@@ -170,7 +179,6 @@ while True:
             # when player clicks on a square, reveal what is under
                     if event.type == pygame.MOUSEBUTTONUP:
                         score += 1
-                        print("score ", score)
                         scorenum_surface = text_font.render(str(score), False, 'Black')
                         screen.blit(scorenum_surface, scorenum_rect)
                         pygame.display.flip()
