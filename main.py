@@ -17,6 +17,7 @@ clock = pygame.time.Clock()
 
 #text
 text_font = pygame.font.Font('img/GloriousChristmas-BLWWB.ttf', 40)
+score = 0
 
 #test_surface = pygame.Surface((100, 200))
 #test_surface.fill('greenyellow')
@@ -24,6 +25,8 @@ text_font = pygame.font.Font('img/GloriousChristmas-BLWWB.ttf', 40)
 
 sky_surface = pygame.image.load('img/bigsky.jpeg')
 text_surface = text_font.render('Le Chat Paresseux', False, 'Black')
+score_surface = text_font.render('Score : ', False, 'Black')
+scorenum_surface = text_font.render(str(score), False, 'Black')
 chooseRows_surface = text_font.render('How many blocks per row (3-10)? ', False, 'Black')
 winthegame_surface = text_font.render('YOU WON !!! click anywhere to start a new game', False, 'Black')
 kitty_surface = pygame.image.load('img/kittenTrans50.png')
@@ -37,8 +40,10 @@ groundFactor = [-2, -1, 0, 1, 2]
 def display_background(nbRangee):
     screen.blit(sky_surface, (0, 0))
     text_rect = text_surface.get_rect(center = (700, (335-(50*nbRangee + 5*nbRangee-1)/2)/2 + 10))
-    # text_rect = text_surface.get_rect(center = (700, 85))
+    score_rect = score_surface.get_rect(topright = (width - 20, 20))
     screen.blit(text_surface, text_rect)
+    screen.blit(score_surface, score_rect)
+
 
 def display_surround(multiplier, surface, minX, minY, maxX, maxY) -> list[any]:
     array = []
@@ -57,6 +62,9 @@ while True:
 
     #game question
     chooseRows_rect = chooseRows_surface.get_rect(center = (width/2, height/2))
+
+    #score
+    scorenum_rect = scorenum_surface.get_rect(topright = (width - 80, 60))
 
     #position winning text
     winthegame_rect = winthegame_surface.get_rect(center = (700, 575))
@@ -117,6 +125,7 @@ while True:
                     screen.blit(kitty_surface, kittyArray[i])
                 for i in range(len(groundArray)):
                     screen.blit(ground_surface, groundArray[i])
+                screen.blit(scorenum_surface, scorenum_rect)
 
                 brick_rect.x = 700-(50*nbRangee + 5*nbRangee-1)/2
                 brick_rect.y = 335-(50*nbRangee + 5*nbRangee-1)/2
@@ -142,8 +151,9 @@ while True:
                                 pygame.quit()
                                 exit()
 
-                            # if player clicks anyway, start new game
+                            # if player clicks anywhere, start new game
                             if event.type == pygame.MOUSEBUTTONUP:
+                                score = 0
                                 display_background(nbRangee)
                                 stop = False
                                 won = False
@@ -159,6 +169,12 @@ while True:
 
             # when player clicks on a square, reveal what is under
                     if event.type == pygame.MOUSEBUTTONUP:
+                        score += 1
+                        print("score ", score)
+                        scorenum_surface = text_font.render(str(score), False, 'Black')
+                        screen.blit(scorenum_surface, scorenum_rect)
+                        pygame.display.flip()
+
                         mousex, mousey = pygame.mouse.get_pos()
                         posx = len(listofx)-1
                         posy = len(listofy)-1
@@ -172,6 +188,7 @@ while True:
                             if mousey >= listofy[y] and mousey < listofy[y+1]:
                                 posy = y
                                 break
+            
 
                 pygame.display.update()
 
