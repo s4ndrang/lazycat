@@ -10,7 +10,7 @@ height = 669
 screen = pygame.display.set_mode((width, height))
 
 #set game title
-pygame.display.set_caption('Le Chat Paresseux')
+pygame.display.set_caption('The Lazy Cat')
 
 #declare clock in order to limit frames/sec
 clock = pygame.time.Clock()
@@ -21,34 +21,79 @@ sm_font = pygame.font.Font('img/GloriousChristmas-BLWWB.ttf', 20)
 score = 0
 gameHistory = []
 
+#colors
+palepink = '#F4DDD0'
+pink = '#E8BBCF'
+darkpurple = '#0F2268'
+
+#space settings
+border = 20
+line_spacing = 10
+font_height = text_font.get_height()
+sm_height = sm_font.get_height()
+
+
 #test_surface = pygame.Surface((100, 200))
 #test_surface.fill('greenyellow')
 #rect = pygame.draw.rect(screen, (0, 255, 0), pygame.Rect(60, 60, 60, 60))
 
 sky_surface = pygame.image.load('img/bigsky.jpeg')
-text_surface = text_font.render('Le Chat Paresseux', False, 'Black')
-score_surface = text_font.render('Score : ', False, 'Black')
+text_surface = text_font.render('The Lazy Cat', False, palepink)
+score_surface = text_font.render('Moves : ', False, 'Black')
 scorenum_surface = text_font.render(str(score), False, 'Black')
-htitle_surface = sm_font.render('Game History', True, 'Black')
+lines = ["\t\t\tGame History", "\t\t\tRows\t\tMoves"]
 chooseRows_surface = text_font.render('How many blocks per row (3-10)? ', False, 'Black')
 winthegame_surface = text_font.render('YOU WON !!! click anywhere to start a new game', False, 'Black')
 kitty_surface = pygame.image.load('img/kittenTrans50.png')
 cat_surface = pygame.image.load('img/cat50.png')
 ground_surface = pygame.image.load('img/ground50.jpeg')
 brick_surface = pygame.image.load('img/brick50.jpeg')
+refresh_surface = text_font.render('Refresh', False, 'Black')
+quit_surface = text_font.render('Quit', False, 'Black')
+chatouter_surface = pygame.Surface((200+line_spacing, 400+line_spacing))
+chatouter_surface.fill('Black')
+chatinner_surface = pygame.Surface((200, 400))
+chatinner_surface.fill(darkpurple)
+chattitle_surface = sm_font.render('Chatroom', False, pink)
+
+score_rect = score_surface.get_rect(topright = (width - border, border))
+refresh_rect = refresh_surface.get_rect(bottomright = (width-border, height-border-quit_surface.get_height()))
+quit_rect = quit_surface.get_rect(bottomright = (width-border, height-border))
+chatouter_rect = chatouter_surface.get_rect(topright = (width-border+line_spacing/2, 20+2*(score_surface.get_height() + line_spacing)-line_spacing/2))
+chatinner_rect = chatinner_surface.get_rect(topright = (width-20, 20+2*(score_surface.get_height() + line_spacing)))
+chattitle_rect = chattitle_surface.get_rect(center = (width-20-chatinner_surface.get_width()/2, border+2*(score_surface.get_height() + line_spacing) + line_spacing))
+
 
 kittyFactor = [-1, 0, 1]
 groundFactor = [-2, -1, 0, 1, 2]
 
 def display_background(nbRangee):
     screen.blit(sky_surface, (0, 0))
-    text_rect = text_surface.get_rect(center = (700, (335-(50*nbRangee + 5*nbRangee-1)/2)/2 + 10))
-    score_rect = score_surface.get_rect(topright = (width - 20, 20))
-    htitle_rect = htitle_surface.get_rect(topleft = (20, 20))
+    text_rect = text_surface.get_rect(center = (width/2, ((height-(50*nbRangee + 5*nbRangee-1))/2)/2))
+    for i, line in enumerate(lines):
+        htitle_surface = sm_font.render(line, True, 'Black')
+        htitle_rect = htitle_surface.get_rect(topleft = (20, 20 + i*(htitle_surface.get_height() + line_spacing)))
+        screen.blit(htitle_surface, htitle_rect)
+    screen.blit(text_surface, text_rect)
     screen.blit(text_surface, text_rect)
     screen.blit(score_surface, score_rect)
-    screen.blit(htitle_surface, htitle_rect)
+    screen.blit(refresh_surface, refresh_rect)
+    screen.blit(quit_surface, quit_rect)
+    screen.blit(chatouter_surface, chatouter_rect)
+    screen.blit(chatinner_surface, chatinner_rect)
+    screen.blit(chattitle_surface, chattitle_rect)
 
+    for i, record in enumerate(gameHistory):
+        # history_text = f"{i+1}. \t\t\t\t{record['nbRangee']} \t\t\t\t\t\t{record['score']}"
+        historynum_surface = sm_font.render(f"{i+1}.", False, 'Black')                            
+        historynum_rect = historynum_surface.get_rect(topleft = (border, border + 2*(sm_height + line_spacing) + i*historynum_surface.get_height()))
+        historyrow_surface = sm_font.render(f"{record['nbRangee']}", False, 'Black')   
+        historyrow_rect = historynum_surface.get_rect(topleft = (70, border + 2*(sm_height + line_spacing) + i*historyrow_surface.get_height()))
+        historyscore_surface = sm_font.render(f"{record['score']}", False, 'Black')   
+        historyscore_rect = historyscore_surface.get_rect(topleft = (145, 20 + 2*(sm_height + line_spacing) + i*historyscore_surface.get_height()))
+        screen.blit(historynum_surface, historynum_rect)
+        screen.blit(historyrow_surface, historyrow_rect)
+        screen.blit(historyscore_surface, historyscore_rect)
 
 def display_surround(multiplier, surface, minX, minY, maxX, maxY) -> list[any]:
     array = []
@@ -59,6 +104,23 @@ def display_surround(multiplier, surface, minX, minY, maxX, maxY) -> list[any]:
                     rect = surface.get_rect(topleft = (cat_rect.x + 55*multiplier[i], cat_rect.y + 55*multiplier[j]))
                     array.append(rect)
     return array
+
+def check_reset(mousex, mousey, nbRangee):
+    global gameHistory
+    global score
+    global stop
+    if mousex >= 1230 and mousex <= 1375 and mousey >= 575 and mousey <= 600 :
+        #popup ?
+        gameHistory = []
+        score = 0
+        display_background(nbRangee)
+        stop = False
+
+def check_quit(mousex, mousey):
+    if mousex >= 1300 and mousex <= 1375 and mousey >= 615 and mousey <= 650 :
+        #popup ?
+        pygame.quit()
+        exit()
 
 while True:
     
@@ -71,31 +133,37 @@ while True:
     #score
     scorenum_rect = scorenum_surface.get_rect(topright = (width - 80, 60))
 
-    #position winning text
-    winthegame_rect = winthegame_surface.get_rect(center = (700, 575))
-    
     stop = False
     while stop == False:
         screen.blit(chooseRows_surface, chooseRows_rect)
-        nbRangee = 0
+        nbRangee = "0"
 
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
-                nbRangee = event.unicode
+                nbRangee += event.unicode
 
+            if event.type == pygame.MOUSEBUTTONUP: 
+                mousex, mousey = pygame.mouse.get_pos()
+                check_reset(mousex, mousey, 3)
+                check_quit(mousex, mousey)
+
+                
         nbRangee = int(nbRangee)
-
+        
+        #position winning text
+        winthegame_rect = winthegame_surface.get_rect(center = (width/2, (50*nbRangee + 5*nbRangee-1)+(height-(50*nbRangee + 5*nbRangee-1))/2 + (height-(50*nbRangee + 5*nbRangee-1))/2/2))
+    
         if nbRangee > 2 and nbRangee < 11:
-            minX = 700-(50*nbRangee + 5*nbRangee-1)/2
-            minY = 335-(50*nbRangee + 5*nbRangee-1)/2
-            maxX = 700+(50*nbRangee + 5*nbRangee-1)/2
-            maxY = 335+(50*nbRangee + 5*nbRangee-1)/2
+            minX = width/2-(50*nbRangee + 5*nbRangee-1)/2
+            minY = height/2-(50*nbRangee + 5*nbRangee-1)/2
+            maxX = width/2+(50*nbRangee + 5*nbRangee-1)/2
+            maxY = height/2+(50*nbRangee + 5*nbRangee-1)/2
             brick_rect = brick_surface.get_rect(topleft = (minX, minY))
             
             #positionn cat
             randint1 = random.randrange(0, nbRangee)
             randint2 = random.randrange(0, nbRangee)
-            cat_rect = cat_surface.get_rect(topleft = (700-(50*nbRangee + 5*nbRangee-1)/2 + 55*randint1, 335-(50*nbRangee + 5*nbRangee-1)/2 + 55*randint2))
+            cat_rect = cat_surface.get_rect(topleft = (width/2-(50*nbRangee + 5*nbRangee-1)/2 + 55*randint1, height/2-(50*nbRangee + 5*nbRangee-1)/2 + 55*randint2))
 
             #position kittens
             kittyArray = display_surround(kittyFactor, kitty_surface, minX, minY, maxX, maxY)
@@ -112,7 +180,7 @@ while True:
                     if brick_rect.x not in listofx:
                         listofx.append(brick_rect.x)
                     brick_rect.x += 55
-                brick_rect.x = 700-(50*nbRangee + 5*nbRangee-1)/2
+                brick_rect.x = width/2-(50*nbRangee + 5*nbRangee-1)/2
                 listofy.append(brick_rect.y)
                 brick_rect.y += 55
 
@@ -146,12 +214,6 @@ while True:
                     while won:
                         
                         screen.blit(winthegame_surface, winthegame_rect)
-                        for i, record in enumerate(gameHistory):
-                            history_text = f"Row: {record['nbRangee']}, Score: {record['score']}"
-                            history_surface = sm_font.render(history_text, False, 'Black')                            
-                            history_rect = history_surface.get_rect(topleft = (20, 40 + i*20))
-                            screen.blit(history_surface, history_rect)
-
                         pygame.display.flip()
 
                         for event in pygame.event.get():
@@ -164,6 +226,11 @@ while True:
                             if event.type == pygame.MOUSEBUTTONUP:
                                 score = 0
                                 display_background(nbRangee)
+
+                                mousex, mousey = pygame.mouse.get_pos()
+                                check_reset(mousex, mousey, nbRangee)
+                                check_quit(mousex, mousey)
+                                    
                                 stop = False
                                 won = False
 
@@ -196,7 +263,10 @@ while True:
                             if mousey >= listofy[y] and mousey < listofy[y+1]:
                                 posy = y
                                 break
-            
+                        
+                        check_reset(mousex, mousey, nbRangee)
+                        check_quit(mousex, mousey)
+
 
                 pygame.display.update()
 
